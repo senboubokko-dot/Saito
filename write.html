@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小説を投稿する | Saito</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">Saito</a>
+    <nav class="global-nav">
+      <a href="index.html">ホーム</a>
+      <a href="write.html">投稿する</a>
+      <a href="#">ログイン</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="write-section">
+    <h1 class="section-title">小説を投稿する</h1>
+
+    <form class="write-form">
+      <div class="form-group">
+        <label for="title">タイトル</label>
+        <input type="text" id="title" name="title" placeholder="作品タイトルを入力">
+      </div>
+
+      <div class="form-group">
+        <label for="summary">あらすじ</label>
+        <textarea id="summary" name="summary" rows="4" placeholder="作品のあらすじを入力"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="tag">ジャンル</label>
+        <select id="tag" name="tag">
+          <option value="fantasy">ファンタジー</option>
+          <option value="romance">恋愛</option>
+          <option value="mystery">ミステリー</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="body">本文</label>
+        <textarea id="body" name="body" rows="16" placeholder="本文を入力"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn">下書き保存</button>
+        <button type="submit" class="btn btn-primary">公開する</button>
+      </div>
+    </form>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>&copy; 2026 Saito 小説投稿サイト</p>
+</footer>
+
+</body>
+</html>
