@@ -20,7 +20,7 @@
     <a href="write.html">小説投稿</a>
     <a href="home-settings.html" class="is-active">ホーム画面設定</a>
     <a href="../index.html">サイトを見る</a>
-    <a href="login.html" class="logout">ログアウト</a>
+    <a href="login.html" class="logout" id="logout-link">ログアウト</a>
   </nav>
 
   <main class="admin-main">
@@ -29,29 +29,29 @@
       トップページの表示内容を設定します。保存するとホーム画面（index.html）に反映されます。
     </p>
 
-    <form class="write-form" onsubmit="return false;">
+    <form class="write-form" id="settings-form">
       <div class="form-group">
         <label for="site-title">サイトタイトル</label>
-        <input type="text" id="site-title" name="site-title" value="Saito">
+        <input type="text" id="site-title" name="site-title">
       </div>
 
       <div class="form-group">
         <label for="per-page">1ページに表示する作品数</label>
-        <input type="number" id="per-page" name="per-page" value="12" min="1" max="50">
+        <input type="number" id="per-page" name="per-page" min="1" max="50">
       </div>
 
       <div class="form-group">
         <label for="sort-order">初期の並び順</label>
         <select id="sort-order" name="sort-order">
-          <option>更新が新しい順</option>
-          <option>公開日が新しい順</option>
-          <option>人気順</option>
+          <option value="updated_desc">更新が新しい順</option>
+          <option value="created_desc">公開日が新しい順</option>
+          <option value="popular">人気順</option>
         </select>
       </div>
 
       <div class="form-group">
         <label class="checkbox-label">
-          <input type="checkbox" name="show-tag-search" checked>
+          <input type="checkbox" id="show-tag-search" name="show-tag-search">
           ホーム画面にタグ検索を表示する
         </label>
       </div>
@@ -65,11 +65,12 @@
         </div>
         <ul class="tag-chip-list" id="filter-tag-chip-list"></ul>
         <p class="form-hint" id="filter-tag-hint"></p>
-        <input type="hidden" name="filter-tags" id="filter-tags-hidden">
       </div>
 
+      <p class="form-error" id="settings-error" hidden></p>
+      <p class="form-success" id="settings-success" hidden></p>
+
       <div class="form-actions">
-        <button type="button" class="btn">初期状態に戻す</button>
         <button type="submit" class="btn btn-primary">保存する</button>
       </div>
     </form>
@@ -78,15 +79,80 @@
 
 <script src="admin.js"></script>
 <script>
-  setupTagInput({
-    inputId: 'filter-tag-input',
-    addButtonId: 'filter-tag-add-btn',
-    listId: 'filter-tag-chip-list',
-    hiddenId: 'filter-tags-hidden',
-    hintId: 'filter-tag-hint',
-    max: 10,
-    initial: ['ファンタジー', '恋愛', 'ミステリー', 'オリジナル', '二次創作']
-  });
+  (function () {
+    fetch('/api/auth/session')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.loggedIn) window.location.href = 'login.html';
+      })
+      .catch(function () { window.location.href = 'login.html'; });
+
+    document.getElementById('logout-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      fetch('/api/auth/logout', { method: 'POST' }).finally(function () {
+        window.location.href = 'login.html';
+      });
+    });
+
+    var filterTagInput = setupTagInput({
+      inputId: 'filter-tag-input',
+      addButtonId: 'filter-tag-add-btn',
+      listId: 'filter-tag-chip-list',
+      hintId: 'filter-tag-hint',
+      max: 10,
+      initial: []
+    });
+
+    var form = document.getElementById('settings-form');
+    var errorEl = document.getElementById('settings-error');
+    var successEl = document.getElementById('settings-success');
+
+    fetch('/api/settings')
+      .then(function (res) { return res.json(); })
+      .then(function (settings) {
+        document.getElementById('site-title').value = settings.siteTitle;
+        document.getElementById('per-page').value = settings.perPage;
+        document.getElementById('sort-order').value = settings.sortOrder;
+        document.getElementById('show-tag-search').checked = !!settings.showTagSearch;
+        filterTagInput.setTags(settings.filterTags || []);
+      });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.hidden = true;
+      successEl.hidden = true;
+
+      var payload = {
+        siteTitle: document.getElementById('site-title').value,
+        perPage: document.getElementById('per-page').value,
+        sortOrder: document.getElementById('sort-order').value,
+        showTagSearch: document.getElementById('show-tag-search').checked,
+        filterTags: filterTagInput.getTags()
+      };
+
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            errorEl.textContent = result.data.error || '保存に失敗しました。';
+            errorEl.hidden = false;
+            return;
+          }
+          successEl.textContent = '保存しました。ホーム画面に反映されています。';
+          successEl.hidden = false;
+        })
+        .catch(function () {
+          errorEl.textContent = 'サーバーに接続できませんでした。';
+          errorEl.hidden = false;
+        });
+    });
+  })();
 </script>
 
 </body>

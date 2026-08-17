@@ -7,7 +7,7 @@ function setupTagInput(options) {
   var input = document.getElementById(options.inputId);
   var addButton = document.getElementById(options.addButtonId);
   var list = document.getElementById(options.listId);
-  var hidden = document.getElementById(options.hiddenId);
+  var hidden = options.hiddenId ? document.getElementById(options.hiddenId) : null;
   var hint = document.getElementById(options.hintId);
   var max = options.max || 10;
   var tags = (options.initial || []).slice(0, max);
@@ -35,7 +35,7 @@ function setupTagInput(options) {
       list.appendChild(li);
     });
 
-    hidden.value = tags.join(',');
+    if (hidden) hidden.value = tags.join(',');
     hint.textContent = 'タグは1〜' + max + '個まで追加できます（' + tags.length + '/' + max + '）';
 
     var limitReached = tags.length >= max;
@@ -66,4 +66,14 @@ function setupTagInput(options) {
   });
 
   render();
+
+  return {
+    getTags: function () {
+      return tags.slice();
+    },
+    setTags: function (newTags) {
+      tags = (newTags || []).slice(0, max);
+      render();
+    }
+  };
 }

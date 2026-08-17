@@ -14,51 +14,8 @@
   </div>
 </header>
 
-<main class="container">
-
-  <p class="breadcrumb">
-    <a href="novel.html">サンプル小説タイトル その一</a> ＞ <span id="breadcrumb-episode">第1話</span>
-  </p>
-
-  <div class="reading-tools">
-    <a href="novel.html" class="toc-link">目次に戻る</a>
-    <div class="font-size-controls" role="group" aria-label="文字サイズ">
-      <span>文字サイズ:</span>
-      <button type="button" data-size="small">小</button>
-      <button type="button" data-size="medium" class="is-active">中</button>
-      <button type="button" data-size="large">大</button>
-    </div>
-  </div>
-
-  <h1 class="episode-title" id="episode-title">第1話　物語のはじまり</h1>
-
-  <article class="reading-body" id="reading-body">
-    <p>
-      朝の光が窓辺に差し込むころ、少女はいつもより早く目を覚ました。
-      今日という日が、これまでとは違う一日になることを、まだ知らないままに。
-    </p>
-    <p>
-      ここに本文が入ります。実際の投稿では、管理画面の「本文」欄に入力した内容が
-      このエリアに表示される想定です。段落ごとに読みやすい行間と余白を確保し、
-      スマートフォンでも快適に読み進められるようにしています。
-    </p>
-    <p>
-      文字サイズは上部のボタンから「小・中・大」に切り替えられます。
-      長時間の読書でも目が疲れにくいよう、背景と文字のコントラストは
-      控えめな水色と黒の2トーンにまとめました。
-    </p>
-    <p>
-      この続きは、次の話へのボタンから読み進めることができます。
-      目次に戻って別の話を選ぶことも可能です。
-    </p>
-  </article>
-
-  <nav class="reading-nav" aria-label="話の移動">
-    <a href="#" id="prev-link" class="btn">← 前の話</a>
-    <a href="novel.html" class="toc-link">目次</a>
-    <a href="#" id="next-link" class="btn btn-primary">次の話 →</a>
-  </nav>
-
+<main class="container" id="main-content">
+  <p class="no-results is-visible">読み込み中です…</p>
 </main>
 
 <footer class="site-footer">
@@ -67,54 +24,89 @@
 
 <script>
   (function () {
-    var episodes = [
-      { title: '物語のはじまり', date: '2026/08/01' },
-      { title: '出会い', date: '2026/08/05' },
-      { title: '旅立ち', date: '2026/08/17' }
-    ];
-
-    var params = new URLSearchParams(window.location.search);
-    var epNumber = parseInt(params.get('ep'), 10);
-    if (!epNumber || epNumber < 1 || epNumber > episodes.length) {
-      epNumber = 1;
-    }
-    var episode = episodes[epNumber - 1];
-    var heading = '第' + epNumber + '話　' + episode.title;
-
-    document.title = heading + ' | サンプル小説タイトル その一 | Saito';
-    document.getElementById('episode-title').textContent = heading;
-    document.getElementById('breadcrumb-episode').textContent = '第' + epNumber + '話';
-
-    var prevLink = document.getElementById('prev-link');
-    var nextLink = document.getElementById('next-link');
-
-    if (epNumber > 1) {
-      prevLink.href = 'episode.html?ep=' + (epNumber - 1);
-      prevLink.removeAttribute('aria-disabled');
-    } else {
-      prevLink.removeAttribute('href');
-      prevLink.setAttribute('aria-disabled', 'true');
-    }
-
-    if (epNumber < episodes.length) {
-      nextLink.href = 'episode.html?ep=' + (epNumber + 1);
-      nextLink.removeAttribute('aria-disabled');
-    } else {
-      nextLink.textContent = '目次に戻る';
-      nextLink.href = 'novel.html';
-    }
-
-    var sizeButtons = document.querySelectorAll('.font-size-controls button');
-    var readingBody = document.getElementById('reading-body');
-    var sizeClass = { small: 'font-small', medium: '', large: 'font-large' };
-
-    sizeButtons.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        sizeButtons.forEach(function (b) { b.classList.remove('is-active'); });
-        btn.classList.add('is-active');
-        readingBody.className = 'reading-body ' + sizeClass[btn.dataset.size];
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
       });
-    });
+    }
+
+    var mainEl = document.getElementById('main-content');
+    var params = new URLSearchParams(window.location.search);
+    var novelId = params.get('id');
+    var chapterNumber = parseInt(params.get('n'), 10) || 1;
+
+    function showError(message) {
+      mainEl.innerHTML = '<p class="no-results is-visible">' + escapeHtml(message) + '</p>';
+    }
+
+    if (!novelId) {
+      showError('作品が指定されていません。ホームから作品を選んでください。');
+      return;
+    }
+
+    fetch('/api/novels/' + encodeURIComponent(novelId))
+      .then(function (res) {
+        if (!res.ok) throw new Error('not found');
+        return res.json();
+      })
+      .then(function (novel) {
+        var chapter = novel.chapters.find(function (c) { return c.number === chapterNumber; });
+        if (!chapter) {
+          showError('指定された話が見つかりませんでした。');
+          return;
+        }
+
+        var heading = '第' + chapter.number + '話　' + chapter.title;
+        document.title = heading + ' | ' + novel.title + ' | Saito';
+
+        var bodyHtml = chapter.body
+          .split('\n')
+          .map(function (line) { return line.trim(); })
+          .filter(function (line) { return line.length > 0; })
+          .map(function (line) { return '<p>' + escapeHtml(line) + '</p>'; })
+          .join('');
+
+        var hasPrev = chapterNumber > 1;
+        var hasNext = chapterNumber < novel.chapters.length;
+        var novelUrl = 'novel.html?id=' + encodeURIComponent(novel.id);
+
+        mainEl.innerHTML =
+          '<p class="breadcrumb">' +
+            '<a href="' + novelUrl + '">' + escapeHtml(novel.title) + '</a> ＞ <span>第' + chapter.number + '話</span>' +
+          '</p>' +
+          '<div class="reading-tools">' +
+            '<a href="' + novelUrl + '" class="toc-link">目次に戻る</a>' +
+            '<div class="font-size-controls" role="group" aria-label="文字サイズ">' +
+              '<span>文字サイズ:</span>' +
+              '<button type="button" data-size="small">小</button>' +
+              '<button type="button" data-size="medium" class="is-active">中</button>' +
+              '<button type="button" data-size="large">大</button>' +
+            '</div>' +
+          '</div>' +
+          '<h1 class="episode-title">' + escapeHtml(heading) + '</h1>' +
+          '<article class="reading-body" id="reading-body">' + bodyHtml + '</article>' +
+          '<nav class="reading-nav" aria-label="話の移動">' +
+            (hasPrev
+              ? '<a href="episode.html?id=' + encodeURIComponent(novel.id) + '&n=' + (chapterNumber - 1) + '" class="btn">← 前の話</a>'
+              : '<span class="btn" aria-disabled="true">← 前の話</span>') +
+            '<a href="' + novelUrl + '" class="toc-link">目次</a>' +
+            (hasNext
+              ? '<a href="episode.html?id=' + encodeURIComponent(novel.id) + '&n=' + (chapterNumber + 1) + '" class="btn btn-primary">次の話 →</a>'
+              : '<a href="' + novelUrl + '" class="btn btn-primary">目次に戻る</a>') +
+          '</nav>';
+
+        var sizeClass = { small: 'font-small', medium: '', large: 'font-large' };
+        document.querySelectorAll('.font-size-controls button').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            document.querySelectorAll('.font-size-controls button').forEach(function (b) { b.classList.remove('is-active'); });
+            btn.classList.add('is-active');
+            document.getElementById('reading-body').className = 'reading-body ' + sizeClass[btn.dataset.size];
+          });
+        });
+      })
+      .catch(function () {
+        showError('作品が見つかりませんでした。');
+      });
   })();
 </script>
 

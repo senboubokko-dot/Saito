@@ -1,0 +1,16 @@
+{
+  "name": "saito",
+  "version": "1.0.0",
+  "private": true,
+  "description": "小説投稿サイト Saito のサーバー（データ永続化・管理者認証つき）",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0"
+  }
+}

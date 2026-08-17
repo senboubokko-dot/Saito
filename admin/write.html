@@ -20,16 +20,21 @@
     <a href="write.html" class="is-active">小説投稿</a>
     <a href="home-settings.html">ホーム画面設定</a>
     <a href="../index.html">サイトを見る</a>
-    <a href="login.html" class="logout">ログアウト</a>
+    <a href="login.html" class="logout" id="logout-link">ログアウト</a>
   </nav>
 
   <main class="admin-main">
-    <h1 class="admin-page-title">小説を投稿する</h1>
+    <h1 class="admin-page-title">新しい小説を投稿する</h1>
 
-    <form class="write-form" onsubmit="return false;">
+    <form class="write-form" id="create-form">
       <div class="form-group">
         <label for="title">タイトル</label>
-        <input type="text" id="title" name="title" placeholder="作品タイトルを入力">
+        <input type="text" id="title" name="title" placeholder="作品タイトルを入力" required>
+      </div>
+
+      <div class="form-group">
+        <label for="author">著者名</label>
+        <input type="text" id="author" name="author" placeholder="著者名を入力" required>
       </div>
 
       <fieldset class="form-group">
@@ -59,17 +64,49 @@
         </div>
         <ul class="tag-chip-list" id="tag-chip-list"></ul>
         <p class="form-hint" id="tag-hint"></p>
-        <input type="hidden" name="tags" id="tags-hidden">
+      </div>
+
+      <div class="form-group">
+        <label for="chapter-title">第1話のタイトル</label>
+        <input type="text" id="chapter-title" name="chapterTitle" placeholder="例: 物語のはじまり（未入力の場合「第1話」になります）">
       </div>
 
       <div class="form-group">
         <label for="body">本文</label>
-        <textarea id="body" name="body" rows="16" placeholder="本文を入力"></textarea>
+        <textarea id="body" name="body" rows="16" placeholder="本文を入力" required></textarea>
       </div>
 
+      <p class="form-error" id="create-error" hidden></p>
+      <p class="form-success" id="create-success" hidden></p>
+
       <div class="form-actions">
-        <button type="button" class="btn">下書き保存</button>
         <button type="submit" class="btn btn-primary">公開する</button>
+      </div>
+    </form>
+
+    <h2 class="admin-page-title">既存の小説に新しい話を追加する</h2>
+
+    <form class="write-form" id="chapter-form">
+      <div class="form-group">
+        <label for="existing-novel">追加先の作品</label>
+        <select id="existing-novel" name="novelId" required></select>
+      </div>
+
+      <div class="form-group">
+        <label for="new-chapter-title">話のタイトル</label>
+        <input type="text" id="new-chapter-title" name="chapterTitle" placeholder="例: 出会い（未入力の場合「第N話」になります）">
+      </div>
+
+      <div class="form-group">
+        <label for="new-chapter-body">本文</label>
+        <textarea id="new-chapter-body" name="body" rows="12" placeholder="本文を入力" required></textarea>
+      </div>
+
+      <p class="form-error" id="chapter-error" hidden></p>
+      <p class="form-success" id="chapter-success" hidden></p>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">話を追加する</button>
       </div>
     </form>
   </main>
@@ -77,15 +114,150 @@
 
 <script src="admin.js"></script>
 <script>
-  setupTagInput({
-    inputId: 'tag-input',
-    addButtonId: 'tag-add-btn',
-    listId: 'tag-chip-list',
-    hiddenId: 'tags-hidden',
-    hintId: 'tag-hint',
-    max: 10,
-    initial: ['ファンタジー', '異世界']
-  });
+  (function () {
+    // ログインしていなければログイン画面に戻す
+    fetch('/api/auth/session')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.loggedIn) window.location.href = 'login.html';
+      })
+      .catch(function () { window.location.href = 'login.html'; });
+
+    document.getElementById('logout-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      fetch('/api/auth/logout', { method: 'POST' }).finally(function () {
+        window.location.href = 'login.html';
+      });
+    });
+
+    var tagInput = setupTagInput({
+      inputId: 'tag-input',
+      addButtonId: 'tag-add-btn',
+      listId: 'tag-chip-list',
+      hintId: 'tag-hint',
+      max: 10,
+      initial: []
+    });
+
+    // ---------- 新規小説の投稿 ----------
+
+    var createForm = document.getElementById('create-form');
+    var createError = document.getElementById('create-error');
+    var createSuccess = document.getElementById('create-success');
+
+    createForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      createError.hidden = true;
+      createSuccess.hidden = true;
+
+      var payload = {
+        title: document.getElementById('title').value,
+        author: document.getElementById('author').value,
+        worktype: createForm.querySelector('input[name="worktype"]:checked').value,
+        note: document.getElementById('note').value,
+        tags: tagInput.getTags(),
+        chapterTitle: document.getElementById('chapter-title').value,
+        body: document.getElementById('body').value
+      };
+
+      fetch('/api/novels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            createError.textContent = result.data.error || '投稿に失敗しました。';
+            createError.hidden = false;
+            return;
+          }
+          createSuccess.textContent = '「' + result.data.title + '」を公開しました。';
+          createSuccess.hidden = false;
+          createForm.reset();
+          tagInput.setTags([]);
+          loadNovelOptions();
+        })
+        .catch(function () {
+          createError.textContent = 'サーバーに接続できませんでした。';
+          createError.hidden = false;
+        });
+    });
+
+    // ---------- 既存作品への話の追加 ----------
+
+    var chapterForm = document.getElementById('chapter-form');
+    var chapterError = document.getElementById('chapter-error');
+    var chapterSuccess = document.getElementById('chapter-success');
+    var novelSelect = document.getElementById('existing-novel');
+
+    function loadNovelOptions() {
+      fetch('/api/novels')
+        .then(function (res) { return res.json(); })
+        .then(function (novels) {
+          novelSelect.innerHTML = '';
+          if (!novels.length) {
+            var opt = document.createElement('option');
+            opt.textContent = '（まだ作品がありません）';
+            opt.disabled = true;
+            novelSelect.appendChild(opt);
+            return;
+          }
+          novels.forEach(function (novel) {
+            var opt = document.createElement('option');
+            opt.value = novel.id;
+            opt.textContent = novel.title + '（' + novel.author + '）';
+            novelSelect.appendChild(opt);
+          });
+        });
+    }
+
+    loadNovelOptions();
+
+    chapterForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      chapterError.hidden = true;
+      chapterSuccess.hidden = true;
+
+      var novelId = novelSelect.value;
+      if (!novelId) {
+        chapterError.textContent = '追加先の作品を選択してください。';
+        chapterError.hidden = false;
+        return;
+      }
+
+      var payload = {
+        title: document.getElementById('new-chapter-title').value,
+        body: document.getElementById('new-chapter-body').value
+      };
+
+      fetch('/api/novels/' + encodeURIComponent(novelId) + '/chapters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            chapterError.textContent = result.data.error || '追加に失敗しました。';
+            chapterError.hidden = false;
+            return;
+          }
+          chapterSuccess.textContent = '第' + result.data.chapters.length + '話を追加しました。';
+          chapterSuccess.hidden = false;
+          document.getElementById('new-chapter-title').value = '';
+          document.getElementById('new-chapter-body').value = '';
+        })
+        .catch(function () {
+          chapterError.textContent = 'サーバーに接続できませんでした。';
+          chapterError.hidden = false;
+        });
+    });
+  })();
 </script>
 
 </body>

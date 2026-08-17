@@ -22,82 +22,15 @@
       <button type="submit">検索</button>
     </form>
 
-    <div class="tag-filter">
-      <span class="tag-filter-label">タグで絞り込む:</span>
-      <button type="button" class="chip" data-tag="fantasy">ファンタジー</button>
-      <button type="button" class="chip" data-tag="romance">恋愛</button>
-      <button type="button" class="chip" data-tag="mystery">ミステリー</button>
-      <button type="button" class="chip" data-tag="original">オリジナル</button>
-      <button type="button" class="chip" data-tag="derivative">二次創作</button>
-    </div>
+    <div class="tag-filter" id="tag-filter"></div>
   </section>
 
   <section class="novel-list-section">
     <h1 class="section-title">新着小説</h1>
 
-    <ul class="novel-list">
-      <li class="novel-card" data-title="サンプル小説タイトル その一" data-author="著者名A" data-tags="ファンタジー,異世界,オリジナル">
-        <a href="novel.html" class="novel-card-link">
-          <div class="novel-card-top">
-            <h2 class="novel-title">サンプル小説タイトル その一</h2>
-            <span class="badge badge-original">オリジナル</span>
-          </div>
-          <p class="novel-author">著者名A</p>
-          <p class="novel-summary">
-            ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
-          </p>
-          <div class="novel-tags">
-            <span class="tag">ファンタジー</span>
-            <span class="tag">異世界</span>
-          </div>
-          <div class="novel-meta">
-            <span class="updated">更新: 2026/08/17</span>
-          </div>
-        </a>
-      </li>
+    <ul class="novel-list" id="novel-list"></ul>
 
-      <li class="novel-card" data-title="サンプル小説タイトル その二" data-author="著者名B" data-tags="恋愛,学園,オリジナル">
-        <a href="novel.html" class="novel-card-link">
-          <div class="novel-card-top">
-            <h2 class="novel-title">サンプル小説タイトル その二</h2>
-            <span class="badge badge-original">オリジナル</span>
-          </div>
-          <p class="novel-author">著者名B</p>
-          <p class="novel-summary">
-            ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
-          </p>
-          <div class="novel-tags">
-            <span class="tag">恋愛</span>
-            <span class="tag">学園</span>
-          </div>
-          <div class="novel-meta">
-            <span class="updated">更新: 2026/08/16</span>
-          </div>
-        </a>
-      </li>
-
-      <li class="novel-card" data-title="サンプル小説タイトル その三" data-author="著者名C" data-tags="ミステリー,短編,二次創作">
-        <a href="novel.html" class="novel-card-link">
-          <div class="novel-card-top">
-            <h2 class="novel-title">サンプル小説タイトル その三</h2>
-            <span class="badge">二次創作</span>
-          </div>
-          <p class="novel-author">著者名C</p>
-          <p class="novel-summary">
-            ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
-          </p>
-          <div class="novel-tags">
-            <span class="tag">ミステリー</span>
-            <span class="tag">短編</span>
-          </div>
-          <div class="novel-meta">
-            <span class="updated">更新: 2026/08/15</span>
-          </div>
-        </a>
-      </li>
-    </ul>
-
-    <p class="no-results" id="no-results">該当する作品が見つかりませんでした。検索条件を変えてお試しください。</p>
+    <p class="no-results" id="no-results">読み込み中です…</p>
   </section>
 
 </main>
@@ -110,49 +43,138 @@
   (function () {
     var searchForm = document.querySelector('.search-form');
     var searchInput = searchForm.querySelector('input[type="search"]');
-    var chips = document.querySelectorAll('.tag-filter .chip');
-    var cards = document.querySelectorAll('.novel-list .novel-card');
+    var tagFilterEl = document.getElementById('tag-filter');
+    var novelListEl = document.getElementById('novel-list');
     var noResults = document.getElementById('no-results');
+    var logoEl = document.querySelector('.logo');
 
-    function activeTags() {
-      return Array.prototype.filter.call(chips, function (chip) {
-        return chip.classList.contains('is-active');
-      }).map(function (chip) {
-        return chip.textContent.trim();
+    var novels = [];
+    var settings = {};
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
       });
+    }
+
+    function formatDate(iso) {
+      var d = new Date(iso);
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+    }
+
+    function renderChips() {
+      tagFilterEl.innerHTML = '';
+      if (settings.showTagSearch === false || !(settings.filterTags || []).length) {
+        return;
+      }
+      var label = document.createElement('span');
+      label.className = 'tag-filter-label';
+      label.textContent = 'タグで絞り込む:';
+      tagFilterEl.appendChild(label);
+
+      settings.filterTags.forEach(function (tag) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip';
+        btn.textContent = tag;
+        btn.addEventListener('click', function () {
+          btn.classList.toggle('is-active');
+          applyFilter();
+        });
+        tagFilterEl.appendChild(btn);
+      });
+    }
+
+    function novelCardHtml(novel) {
+      var isOriginal = novel.worktype !== 'derivative';
+      var badgeClass = isOriginal ? 'badge badge-original' : 'badge';
+      var badgeText = isOriginal ? 'オリジナル' : '二次創作';
+      var tagsHtml = (novel.tags || []).map(function (t) {
+        return '<span class="tag">' + escapeHtml(t) + '</span>';
+      }).join('');
+
+      return (
+        '<a href="novel.html?id=' + encodeURIComponent(novel.id) + '" class="novel-card-link">' +
+          '<div class="novel-card-top">' +
+            '<h2 class="novel-title">' + escapeHtml(novel.title) + '</h2>' +
+            '<span class="' + badgeClass + '">' + badgeText + '</span>' +
+          '</div>' +
+          '<p class="novel-author">' + escapeHtml(novel.author) + '</p>' +
+          '<p class="novel-summary">' + escapeHtml(novel.note || '') + '</p>' +
+          '<div class="novel-tags">' + tagsHtml + '</div>' +
+          '<div class="novel-meta"><span class="updated">更新: ' + formatDate(novel.updatedAt) + '</span></div>' +
+        '</a>'
+      );
+    }
+
+    function renderNovels(list) {
+      novelListEl.innerHTML = '';
+      list.forEach(function (novel) {
+        var li = document.createElement('li');
+        li.className = 'novel-card';
+        li.innerHTML = novelCardHtml(novel);
+        novelListEl.appendChild(li);
+      });
+      noResults.classList.toggle('is-visible', list.length === 0);
+      noResults.textContent = '該当する作品が見つかりませんでした。検索条件を変えてお試しください。';
+    }
+
+    function activeChipTags() {
+      return Array.prototype.filter.call(tagFilterEl.querySelectorAll('.chip'), function (c) {
+        return c.classList.contains('is-active');
+      }).map(function (c) {
+        return c.textContent.trim();
+      });
+    }
+
+    function sortedNovels() {
+      var list = novels.slice();
+      if (settings.sortOrder === 'created_desc') {
+        list.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+      } else {
+        // updated_desc（既定）。「人気順」は閲覧数などの指標が無いため、暫定的に更新順を使用
+        list.sort(function (a, b) { return new Date(b.updatedAt) - new Date(a.updatedAt); });
+      }
+      return list;
     }
 
     function applyFilter() {
       var query = searchInput.value.trim().toLowerCase();
-      var tags = activeTags();
-      var visibleCount = 0;
+      var activeTags = activeChipTags();
 
-      cards.forEach(function (card) {
-        var cardTags = card.dataset.tags.split(',');
-        var haystack = (card.dataset.title + ' ' + card.dataset.author + ' ' + card.dataset.tags).toLowerCase();
+      var filtered = sortedNovels().filter(function (novel) {
+        var haystack = (novel.title + ' ' + novel.author + ' ' + (novel.tags || []).join(' ')).toLowerCase();
         var matchesQuery = !query || haystack.indexOf(query) !== -1;
-        var matchesTags = tags.every(function (tag) {
-          return cardTags.indexOf(tag) !== -1;
-        });
-        var visible = matchesQuery && matchesTags;
-        card.style.display = visible ? '' : 'none';
-        if (visible) visibleCount++;
+        var matchesTags = activeTags.every(function (t) { return (novel.tags || []).indexOf(t) !== -1; });
+        return matchesQuery && matchesTags;
       });
 
-      noResults.classList.toggle('is-visible', visibleCount === 0);
+      var perPage = settings.perPage > 0 ? settings.perPage : filtered.length;
+      renderNovels(filtered.slice(0, perPage));
     }
-
-    chips.forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        chip.classList.toggle('is-active');
-        applyFilter();
-      });
-    });
 
     searchInput.addEventListener('input', applyFilter);
     searchForm.addEventListener('submit', function (e) {
       e.preventDefault();
       applyFilter();
+    });
+
+    Promise.all([
+      fetch('/api/novels').then(function (r) { return r.json(); }),
+      fetch('/api/settings').then(function (r) { return r.json(); })
+    ]).then(function (results) {
+      novels = results[0];
+      settings = results[1];
+      if (settings.siteTitle) {
+        logoEl.textContent = settings.siteTitle;
+        document.title = settings.siteTitle + ' | 小説投稿サイト';
+      }
+      renderChips();
+      applyFilter();
+    }).catch(function () {
+      noResults.textContent = '作品の読み込みに失敗しました。サーバーが起動しているかご確認ください。';
+      noResults.classList.add('is-visible');
     });
   })();
 </script>

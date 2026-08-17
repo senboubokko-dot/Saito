@@ -425,6 +425,18 @@ button {
   margin: 0;
 }
 
+.form-error {
+  font-size: 0.82rem;
+  color: #c0392b;
+  margin: 0;
+}
+
+.form-success {
+  font-size: 0.82rem;
+  color: var(--color-primary-dark);
+  margin: 0;
+}
+
 .radio-label,
 .checkbox-label {
   display: flex;
