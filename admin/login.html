@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#12181c">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex, nofollow">
+<title>管理者ログイン | Saito</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<div class="login-wrap">
+  <div class="login-card">
+    <span class="login-logo">Saito</span>
+    <p class="login-title">管理者ログイン</p>
+
+    <form class="login-form" id="login-form">
+      <div class="form-group">
+        <label for="admin-id">管理者ID</label>
+        <input type="text" id="admin-id" name="admin-id" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label for="admin-password">パスワード</label>
+        <input type="password" id="admin-password" name="admin-password" autocomplete="current-password" required>
+      </div>
+      <p class="form-error" id="login-error" hidden></p>
+      <button type="submit" class="btn btn-primary">ログイン</button>
+    </form>
+
+    <a href="../index.html" class="login-back">サイトに戻る</a>
+  </div>
+</div>
+
+<script>
+  document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var errorEl = document.getElementById('login-error');
+    var username = document.getElementById('admin-id').value.trim();
+    var password = document.getElementById('admin-password').value;
+    errorEl.hidden = true;
+
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    })
+      .then(function (res) {
+        return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+      })
+      .then(function (result) {
+        if (!result.ok) {
+          errorEl.textContent = result.data.error || 'ログインに失敗しました。';
+          errorEl.hidden = false;
+          return;
+        }
+        window.location.href = 'write.html';
+      })
+      .catch(function () {
+        errorEl.textContent = 'サーバーに接続できませんでした。';
+        errorEl.hidden = false;
+      });
+  });
+</script>
+
+</body>
+</html>

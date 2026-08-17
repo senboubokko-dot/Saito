@@ -1,17 +1,21 @@
 /* ==========================================================
-   Saito 小説投稿サイト - 共通スタイル
+   Saito 小説投稿サイト - 共通スタイル（公開ページ）
+   配色: 水色 × 黒 のシンプルな2トーン
    モバイルファーストで作成し、画面幅に応じて広げていく
    ========================================================== */
 
 :root {
-  --color-bg: #faf8f5;
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-text: #2b2620;
-  --color-text-light: #6b6355;
-  --color-primary: #a6633c;
-  --color-primary-dark: #7f4a2a;
-  --color-border: #e5ddd0;
-  --color-tag-bg: #f1e6d8;
+  --color-text: #12181c;
+  --color-text-light: #57666d;
+  --color-primary: #0b84ac;
+  --color-primary-dark: #086a88;
+  --color-mizu: #d8f3fa;
+  --color-border: #dce8ec;
+  --color-black: #12181c;
+  --color-header-bg: #12181c;
+  --color-header-text: #eaf6fa;
   --max-width: 960px;
   --radius: 8px;
 }
@@ -49,6 +53,10 @@ ul, ol {
   padding: 0;
 }
 
+button {
+  font-family: inherit;
+}
+
 /* ---------- レイアウト ---------- */
 
 .container {
@@ -59,10 +67,11 @@ ul, ol {
 }
 
 /* ---------- ヘッダー ---------- */
+/* 公開ページのヘッダーは黒地に水色ロゴのみ。
+   投稿・ログイン導線は置かず、管理者専用URLからのみ管理画面へ入る。 */
 
 .site-header {
-  background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-header-bg);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -71,34 +80,45 @@ ul, ol {
 .header-inner {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 0.75rem 1rem;
+  padding: 0.9rem 1rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
 .logo {
   font-size: 1.4rem;
   font-weight: bold;
-  color: var(--color-primary-dark);
-  letter-spacing: 0.05em;
+  color: var(--color-mizu);
+  letter-spacing: 0.08em;
 }
 
-.global-nav {
+.reader-nav {
+  margin-left: auto;
   display: flex;
-  gap: 1rem;
-  font-size: 0.9rem;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.82rem;
+  flex-wrap: wrap;
 }
 
-.global-nav a {
-  padding: 0.3rem 0.2rem;
-  color: var(--color-text-light);
+.reader-nav a,
+.reader-nav button {
+  color: var(--color-header-text);
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
 }
 
-.global-nav a:hover {
-  color: var(--color-primary);
+.reader-nav a:hover,
+.reader-nav button:hover {
+  color: var(--color-mizu);
+}
+
+.reader-nav-name {
+  color: var(--color-mizu);
 }
 
 /* ---------- フッター ---------- */
@@ -120,7 +140,7 @@ ul, ol {
   margin: 1.5rem 0 1rem;
 }
 
-/* ---------- 検索フォーム ---------- */
+/* ---------- 検索・タグ絞り込み ---------- */
 
 .search-section {
   margin-top: 1rem;
@@ -138,6 +158,7 @@ ul, ol {
   border-radius: var(--radius);
   font-size: 1rem;
   background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 .search-form button {
@@ -152,6 +173,40 @@ ul, ol {
 
 .search-form button:hover {
   background-color: var(--color-primary-dark);
+}
+
+.tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  font-size: 0.85rem;
+}
+
+.tag-filter-label {
+  color: var(--color-text-light);
+}
+
+.chip {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--color-primary);
+}
+
+.chip.is-active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
 }
 
 /* ---------- 小説一覧（カード） ---------- */
@@ -175,13 +230,20 @@ ul, ol {
 }
 
 .novel-card-link:hover {
-  background-color: #fdfaf6;
+  background-color: var(--color-mizu);
+}
+
+.novel-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .novel-title {
   font-size: 1.1rem;
   margin: 0 0 0.3rem;
-  color: var(--color-primary-dark);
+  color: var(--color-black);
 }
 
 .novel-author {
@@ -196,6 +258,13 @@ ul, ol {
   color: var(--color-text);
 }
 
+.novel-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+}
+
 .novel-meta {
   display: flex;
   align-items: center;
@@ -208,13 +277,38 @@ ul, ol {
 .tag {
   display: inline-block;
   padding: 0.2rem 0.6rem;
-  background-color: var(--color-tag-bg);
+  background-color: var(--color-mizu);
   color: var(--color-primary-dark);
   border-radius: 999px;
 }
 
 .updated {
   color: var(--color-text-light);
+}
+
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+/* 作品タイプ（オリジナル / 二次創作）バッジ */
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid var(--color-black);
+  color: var(--color-black);
+  background-color: #fff;
+  white-space: nowrap;
+}
+
+.badge-original {
+  background-color: var(--color-mizu);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
 }
 
 /* ---------- 小説詳細ページ ---------- */
@@ -230,7 +324,7 @@ ul, ol {
 .novel-detail-title {
   font-size: 1.4rem;
   margin: 0 0 0.5rem;
-  color: var(--color-primary-dark);
+  color: var(--color-black);
 }
 
 .novel-detail-author {
@@ -241,12 +335,16 @@ ul, ol {
 
 .novel-detail-header .novel-meta {
   justify-content: flex-start;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.novel-detail-header .novel-tags {
+  margin-top: 0.6rem;
 }
 
 .novel-detail-summary {
   font-size: 0.95rem;
-  margin: 0 0 1rem;
+  margin: 1rem 0;
 }
 
 .novel-actions {
@@ -299,7 +397,7 @@ ul, ol {
 }
 
 .episode-link:hover {
-  background-color: #fdfaf6;
+  background-color: var(--color-mizu);
 }
 
 .episode-date {
@@ -308,7 +406,7 @@ ul, ol {
   white-space: nowrap;
 }
 
-/* ---------- 投稿フォーム ---------- */
+/* ---------- フォーム共通（投稿・設定などで使用） ---------- */
 
 .write-form {
   background-color: var(--color-surface);
@@ -324,14 +422,19 @@ ul, ol {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
 
-.form-group label {
+.form-group label,
+.form-group legend {
   font-size: 0.9rem;
   color: var(--color-text-light);
+  padding: 0;
 }
 
-.form-group input,
+.form-group input:not([type="radio"]):not([type="checkbox"]),
 .form-group select,
 .form-group textarea {
   width: 100%;
@@ -341,7 +444,48 @@ ul, ol {
   font-size: 1rem;
   font-family: inherit;
   background-color: var(--color-bg);
+  color: var(--color-text);
   resize: vertical;
+}
+
+.form-group input[type="radio"],
+.form-group input[type="checkbox"] {
+  width: auto;
+  flex-shrink: 0;
+}
+
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.form-error {
+  font-size: 0.82rem;
+  color: #c0392b;
+  margin: 0;
+}
+
+.form-success {
+  font-size: 0.82rem;
+  color: var(--color-primary-dark);
+  margin: 0;
+}
+
+.radio-label,
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.radio-group {
+  display: flex;
+  gap: 0.7rem 1.2rem;
+  flex-wrap: wrap;
 }
 
 .form-actions {
@@ -349,6 +493,163 @@ ul, ol {
   justify-content: flex-end;
   gap: 0.6rem;
   flex-wrap: wrap;
+}
+
+/* タグ追加入力（投稿画面・ホーム設定で共通利用） */
+
+.tag-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tag-input-row input {
+  flex: 1;
+}
+
+.tag-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+  min-height: 1.6rem;
+}
+
+.tag-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.4rem 0.25rem 0.7rem;
+  background-color: var(--color-mizu);
+  color: var(--color-primary-dark);
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.tag-chip button {
+  border: none;
+  background: none;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+}
+
+.tag-chip button:hover {
+  color: var(--color-black);
+}
+
+/* ---------- 検索結果なし ---------- */
+
+.no-results {
+  display: none;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text-light);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+}
+
+.no-results.is-visible {
+  display: block;
+}
+
+/* ---------- 話を読むページ ---------- */
+
+.breadcrumb {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  margin: 1rem 0 0.6rem;
+}
+
+.breadcrumb a:hover {
+  color: var(--color-primary);
+}
+
+.reading-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.font-size-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+}
+
+.font-size-controls button {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.font-size-controls button.is-active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.episode-title {
+  font-size: 1.3rem;
+  margin: 0 0 1.2rem;
+  color: var(--color-black);
+}
+
+.reading-body {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.3rem;
+  font-size: 1.05rem;
+  line-height: 2.1;
+}
+
+.reading-body.font-small {
+  font-size: 0.9rem;
+}
+
+.reading-body.font-large {
+  font-size: 1.25rem;
+}
+
+.reading-body p {
+  margin: 0 0 1.5rem;
+}
+
+.reading-body p:last-child {
+  margin-bottom: 0;
+}
+
+.reading-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.reading-nav .btn[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.toc-link {
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+}
+
+.toc-link:hover {
+  color: var(--color-primary);
 }
 
 /* ==========================================================
@@ -371,10 +672,5 @@ ul, ol {
 @media (min-width: 900px) {
   .novel-list {
     grid-template-columns: repeat(3, 1fr);
-  }
-
-  .global-nav {
-    font-size: 1rem;
-    gap: 1.5rem;
   }
 }

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#12181c">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex, nofollow">
+<title>投稿の管理 | 管理画面 | Saito</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <span class="logo">Saito</span>
+  <span class="admin-label">管理画面</span>
+</header>
+
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="write.html">小説投稿</a>
+    <a href="manage.html" class="is-active">投稿の管理</a>
+    <a href="home-settings.html">ホーム画面設定</a>
+    <a href="account.html">アカウント設定</a>
+    <a href="../index.html">サイトを見る</a>
+    <a href="login.html" class="logout" id="logout-link">ログアウト</a>
+  </nav>
+
+  <main class="admin-main">
+    <h1 class="admin-page-title">投稿の管理</h1>
+    <p class="admin-hint-box">
+      投稿した作品の情報や話の内容を編集・削除できます。削除は元に戻せません。
+    </p>
+
+    <div id="novel-manage-list">
+      <p class="no-results is-visible">読み込み中です…</p>
+    </div>
+  </main>
+</div>
+
+<script>
+  (function () {
+    fetch('/api/auth/session')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.loggedIn) window.location.href = 'login.html';
+      })
+      .catch(function () { window.location.href = 'login.html'; });
+
+    document.getElementById('logout-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      fetch('/api/auth/logout', { method: 'POST' }).finally(function () {
+        window.location.href = 'login.html';
+      });
+    });
+
+    var container = document.getElementById('novel-manage-list');
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function chapterRowHtml(chapter) {
+      return (
+        '<li class="manage-chapter-item" data-chapter-id="' + chapter.id + '">' +
+          '<div class="manage-chapter-summary">' +
+            '<span>第' + chapter.number + '話　' + escapeHtml(chapter.title) + '</span>' +
+            '<div class="manage-actions">' +
+              '<button type="button" class="btn" data-action="edit-chapter">編集</button>' +
+              '<button type="button" class="btn" data-action="delete-chapter">削除</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="manage-edit-panel" data-panel="chapter" hidden>' +
+            '<div class="form-group"><label>話のタイトル</label>' +
+              '<input type="text" class="chapter-title-input" value="' + escapeHtml(chapter.title) + '"></div>' +
+            '<div class="form-group"><label>本文</label>' +
+              '<textarea class="chapter-body-input" rows="10">' + escapeHtml(chapter.body) + '</textarea></div>' +
+            '<p class="form-error" hidden></p>' +
+            '<div class="form-actions">' +
+              '<button type="button" class="btn" data-action="cancel-chapter">キャンセル</button>' +
+              '<button type="button" class="btn btn-primary" data-action="save-chapter">保存する</button>' +
+            '</div>' +
+          '</div>' +
+        '</li>'
+      );
+    }
+
+    function novelCardHtml(novel) {
+      var chaptersHtml = novel.chapters.map(chapterRowHtml).join('');
+      var tagsText = (novel.tags || []).join('、') || 'タグなし';
+      var worktypeText = novel.worktype === 'derivative' ? '二次創作' : 'オリジナル';
+      var radioName = 'worktype-' + novel.id;
+
+      return (
+        '<div class="manage-novel-card" data-novel-id="' + novel.id + '">' +
+          '<div class="manage-novel-summary">' +
+            '<div>' +
+              '<h2 class="novel-title">' + escapeHtml(novel.title) + '</h2>' +
+              '<p class="novel-author">' + escapeHtml(novel.author) + '・' + worktypeText + '・' + tagsText + '・全' + novel.chapters.length + '話</p>' +
+            '</div>' +
+            '<div class="manage-actions">' +
+              '<button type="button" class="btn" data-action="edit-novel">編集</button>' +
+              '<button type="button" class="btn" data-action="delete-novel">削除</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="manage-edit-panel" data-panel="novel" hidden>' +
+            '<div class="form-group"><label>タイトル</label>' +
+              '<input type="text" class="novel-title-input" value="' + escapeHtml(novel.title) + '"></div>' +
+            '<div class="form-group"><label>著者名</label>' +
+              '<input type="text" class="novel-author-input" value="' + escapeHtml(novel.author) + '"></div>' +
+            '<fieldset class="form-group"><legend>作品タイプ</legend><div class="radio-group">' +
+              '<label class="radio-label"><input type="radio" name="' + radioName + '" value="original" ' + (novel.worktype !== 'derivative' ? 'checked' : '') + '>オリジナル作品</label>' +
+              '<label class="radio-label"><input type="radio" name="' + radioName + '" value="derivative" ' + (novel.worktype === 'derivative' ? 'checked' : '') + '>二次創作</label>' +
+            '</div></fieldset>' +
+            '<div class="form-group"><label>備考</label>' +
+              '<textarea class="novel-note-input" rows="3">' + escapeHtml(novel.note || '') + '</textarea></div>' +
+            '<div class="form-group"><label>タグ（カンマ区切り・最大10個）</label>' +
+              '<input type="text" class="novel-tags-input" value="' + escapeHtml((novel.tags || []).join(', ')) + '"></div>' +
+            '<p class="form-error" hidden></p>' +
+            '<div class="form-actions">' +
+              '<button type="button" class="btn" data-action="cancel-novel">キャンセル</button>' +
+              '<button type="button" class="btn btn-primary" data-action="save-novel">保存する</button>' +
+            '</div>' +
+          '</div>' +
+          '<ul class="manage-chapter-list">' + chaptersHtml + '</ul>' +
+        '</div>'
+      );
+    }
+
+    function loadAndRender() {
+      container.innerHTML = '<p class="no-results is-visible">読み込み中です…</p>';
+      fetch('/api/novels')
+        .then(function (res) { return res.json(); })
+        .then(function (list) {
+          return Promise.all(list.map(function (n) {
+            return fetch('/api/novels/' + encodeURIComponent(n.id)).then(function (res) { return res.json(); });
+          }));
+        })
+        .then(function (novels) {
+          if (!novels.length) {
+            container.innerHTML = '<p class="no-results is-visible">まだ投稿された作品がありません。</p>';
+            return;
+          }
+          novels.sort(function (a, b) { return new Date(b.updatedAt) - new Date(a.updatedAt); });
+          container.innerHTML = novels.map(novelCardHtml).join('');
+        })
+        .catch(function () {
+          container.innerHTML = '<p class="no-results is-visible">読み込みに失敗しました。</p>';
+        });
+    }
+
+    function saveNovel(card) {
+      var novelId = card.dataset.novelId;
+      var panel = card.querySelector('[data-panel="novel"]');
+      var errorEl = panel.querySelector('.form-error');
+      errorEl.hidden = true;
+
+      var payload = {
+        title: panel.querySelector('.novel-title-input').value,
+        author: panel.querySelector('.novel-author-input').value,
+        worktype: panel.querySelector('input[type="radio"]:checked').value,
+        note: panel.querySelector('.novel-note-input').value,
+        tags: panel.querySelector('.novel-tags-input').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean).slice(0, 10)
+      };
+
+      fetch('/api/novels/' + encodeURIComponent(novelId), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (!result.ok) {
+            errorEl.textContent = result.data.error || '保存に失敗しました。';
+            errorEl.hidden = false;
+            return;
+          }
+          loadAndRender();
+        })
+        .catch(function () {
+          errorEl.textContent = 'サーバーに接続できませんでした。';
+          errorEl.hidden = false;
+        });
+    }
+
+    function deleteNovel(card) {
+      var novelId = card.dataset.novelId;
+      var title = card.querySelector('.novel-title').textContent;
+      if (!window.confirm('「' + title + '」を削除します。すべての話も削除され、元に戻せません。よろしいですか？')) {
+        return;
+      }
+      fetch('/api/novels/' + encodeURIComponent(novelId), { method: 'DELETE' })
+        .then(function (res) {
+          if (!res.ok) {
+            window.alert('削除に失敗しました。');
+            return;
+          }
+          loadAndRender();
+        });
+    }
+
+    function saveChapter(card, item) {
+      var novelId = card.dataset.novelId;
+      var chapterId = item.dataset.chapterId;
+      var panel = item.querySelector('[data-panel="chapter"]');
+      var errorEl = panel.querySelector('.form-error');
+      errorEl.hidden = true;
+
+      var payload = {
+        title: panel.querySelector('.chapter-title-input').value,
+        body: panel.querySelector('.chapter-body-input').value
+      };
+
+      fetch('/api/novels/' + encodeURIComponent(novelId) + '/chapters/' + encodeURIComponent(chapterId), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (!result.ok) {
+            errorEl.textContent = result.data.error || '保存に失敗しました。';
+            errorEl.hidden = false;
+            return;
+          }
+          loadAndRender();
+        })
+        .catch(function () {
+          errorEl.textContent = 'サーバーに接続できませんでした。';
+          errorEl.hidden = false;
+        });
+    }
+
+    function deleteChapter(card, item) {
+      var novelId = card.dataset.novelId;
+      var chapterId = item.dataset.chapterId;
+      if (!window.confirm('この話を削除します。元に戻せません。よろしいですか？')) {
+        return;
+      }
+      fetch('/api/novels/' + encodeURIComponent(novelId) + '/chapters/' + encodeURIComponent(chapterId), { method: 'DELETE' })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (!result.ok) {
+            window.alert(result.data.error || '削除に失敗しました。');
+            return;
+          }
+          loadAndRender();
+        });
+    }
+
+    container.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn) return;
+
+      var card = e.target.closest('.manage-novel-card');
+      var action = btn.dataset.action;
+
+      if (action === 'edit-novel') {
+        card.querySelector('[data-panel="novel"]').hidden = false;
+      } else if (action === 'cancel-novel') {
+        card.querySelector('[data-panel="novel"]').hidden = true;
+      } else if (action === 'save-novel') {
+        saveNovel(card);
+      } else if (action === 'delete-novel') {
+        deleteNovel(card);
+      } else if (action === 'edit-chapter') {
+        e.target.closest('.manage-chapter-item').querySelector('[data-panel="chapter"]').hidden = false;
+      } else if (action === 'cancel-chapter') {
+        e.target.closest('.manage-chapter-item').querySelector('[data-panel="chapter"]').hidden = true;
+      } else if (action === 'save-chapter') {
+        saveChapter(card, e.target.closest('.manage-chapter-item'));
+      } else if (action === 'delete-chapter') {
+        deleteChapter(card, e.target.closest('.manage-chapter-item'));
+      }
+    });
+
+    loadAndRender();
+  })();
+</script>
+
+</body>
+</html>

@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#12181c">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="オリジナル・二次創作の小説を投稿・検索・閲覧できる小説投稿サイト Saito です。">
 <title>小説投稿サイト | Saito</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -11,11 +14,7 @@
 <header class="site-header">
   <div class="header-inner">
     <a href="index.html" class="logo">Saito</a>
-    <nav class="global-nav">
-      <a href="index.html">ホーム</a>
-      <a href="write.html">投稿する</a>
-      <a href="#">ログイン</a>
-    </nav>
+    <nav class="reader-nav" id="reader-nav"></nav>
   </div>
 </header>
 
@@ -23,57 +22,23 @@
 
   <section class="search-section">
     <form class="search-form" role="search">
-      <input type="search" placeholder="作品タイトル・作者名で検索" aria-label="作品を検索">
+      <input type="search" placeholder="作品タイトル・作者名・タグで検索" aria-label="作品を検索">
       <button type="submit">検索</button>
     </form>
+
+    <div class="tag-filter" id="tag-filter"></div>
   </section>
 
   <section class="novel-list-section">
     <h1 class="section-title">新着小説</h1>
 
-    <ul class="novel-list">
-      <li class="novel-card">
-        <a href="novel.html" class="novel-card-link">
-          <h2 class="novel-title">サンプル小説タイトル その一</h2>
-          <p class="novel-author">著者名A</p>
-          <p class="novel-summary">
-            ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
-          </p>
-          <div class="novel-meta">
-            <span class="tag">ファンタジー</span>
-            <span class="updated">更新: 2026/08/17</span>
-          </div>
-        </a>
-      </li>
+    <ul class="novel-list" id="novel-list"></ul>
 
-      <li class="novel-card">
-        <a href="novel.html" class="novel-card-link">
-          <h2 class="novel-title">サンプル小説タイトル その二</h2>
-          <p class="novel-author">著者名B</p>
-          <p class="novel-summary">
-            ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
-          </p>
-          <div class="novel-meta">
-            <span class="tag">恋愛</span>
-            <span class="updated">更新: 2026/08/16</span>
-          </div>
-        </a>
-      </li>
+    <p class="no-results" id="no-results">読み込み中です…</p>
 
-      <li class="novel-card">
-        <a href="novel.html" class="novel-card-link">
-          <h2 class="novel-title">サンプル小説タイトル その三</h2>
-          <p class="novel-author">著者名C</p>
-          <p class="novel-summary">
-            ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
-          </p>
-          <div class="novel-meta">
-            <span class="tag">ミステリー</span>
-            <span class="updated">更新: 2026/08/15</span>
-          </div>
-        </a>
-      </li>
-    </ul>
+    <div class="load-more-wrap">
+      <button type="button" class="btn" id="load-more-btn" hidden>もっと見る</button>
+    </div>
   </section>
 
 </main>
@@ -81,6 +46,162 @@
 <footer class="site-footer">
   <p>&copy; 2026 Saito 小説投稿サイト</p>
 </footer>
+
+<script>
+  (function () {
+    var searchForm = document.querySelector('.search-form');
+    var searchInput = searchForm.querySelector('input[type="search"]');
+    var tagFilterEl = document.getElementById('tag-filter');
+    var novelListEl = document.getElementById('novel-list');
+    var noResults = document.getElementById('no-results');
+    var loadMoreBtn = document.getElementById('load-more-btn');
+    var logoEl = document.querySelector('.logo');
+
+    var novels = [];
+    var settings = {};
+    var currentFiltered = [];
+    var visibleCount = 0;
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function formatDate(iso) {
+      var d = new Date(iso);
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+    }
+
+    function renderChips() {
+      tagFilterEl.innerHTML = '';
+      if (settings.showTagSearch === false || !(settings.filterTags || []).length) {
+        return;
+      }
+      var label = document.createElement('span');
+      label.className = 'tag-filter-label';
+      label.textContent = 'タグで絞り込む:';
+      tagFilterEl.appendChild(label);
+
+      settings.filterTags.forEach(function (tag) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip';
+        btn.textContent = tag;
+        btn.addEventListener('click', function () {
+          btn.classList.toggle('is-active');
+          applyFilter();
+        });
+        tagFilterEl.appendChild(btn);
+      });
+    }
+
+    function novelCardHtml(novel) {
+      var isOriginal = novel.worktype !== 'derivative';
+      var badgeClass = isOriginal ? 'badge badge-original' : 'badge';
+      var badgeText = isOriginal ? 'オリジナル' : '二次創作';
+      var tagsHtml = (novel.tags || []).map(function (t) {
+        return '<span class="tag">' + escapeHtml(t) + '</span>';
+      }).join('');
+
+      return (
+        '<a href="novel.html?id=' + encodeURIComponent(novel.id) + '" class="novel-card-link">' +
+          '<div class="novel-card-top">' +
+            '<h2 class="novel-title">' + escapeHtml(novel.title) + '</h2>' +
+            '<span class="' + badgeClass + '">' + badgeText + '</span>' +
+          '</div>' +
+          '<p class="novel-author">' + escapeHtml(novel.author) + '</p>' +
+          '<p class="novel-summary">' + escapeHtml(novel.note || '') + '</p>' +
+          '<div class="novel-tags">' + tagsHtml + '</div>' +
+          '<div class="novel-meta"><span class="updated">更新: ' + formatDate(novel.updatedAt) + '</span></div>' +
+        '</a>'
+      );
+    }
+
+    function renderNovels(list) {
+      novelListEl.innerHTML = '';
+      list.forEach(function (novel) {
+        var li = document.createElement('li');
+        li.className = 'novel-card';
+        li.innerHTML = novelCardHtml(novel);
+        novelListEl.appendChild(li);
+      });
+      noResults.classList.toggle('is-visible', list.length === 0);
+      noResults.textContent = '該当する作品が見つかりませんでした。検索条件を変えてお試しください。';
+    }
+
+    function activeChipTags() {
+      return Array.prototype.filter.call(tagFilterEl.querySelectorAll('.chip'), function (c) {
+        return c.classList.contains('is-active');
+      }).map(function (c) {
+        return c.textContent.trim();
+      });
+    }
+
+    function sortedNovels() {
+      var list = novels.slice();
+      if (settings.sortOrder === 'created_desc') {
+        list.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+      } else {
+        // updated_desc（既定）。「人気順」は閲覧数などの指標が無いため、暫定的に更新順を使用
+        list.sort(function (a, b) { return new Date(b.updatedAt) - new Date(a.updatedAt); });
+      }
+      return list;
+    }
+
+    function renderVisible() {
+      renderNovels(currentFiltered.slice(0, visibleCount));
+      loadMoreBtn.hidden = visibleCount >= currentFiltered.length;
+    }
+
+    function applyFilter() {
+      var query = searchInput.value.trim().toLowerCase();
+      var activeTags = activeChipTags();
+
+      currentFiltered = sortedNovels().filter(function (novel) {
+        var haystack = (novel.title + ' ' + novel.author + ' ' + (novel.tags || []).join(' ')).toLowerCase();
+        var matchesQuery = !query || haystack.indexOf(query) !== -1;
+        var matchesTags = activeTags.every(function (t) { return (novel.tags || []).indexOf(t) !== -1; });
+        return matchesQuery && matchesTags;
+      });
+
+      var perPage = settings.perPage > 0 ? settings.perPage : currentFiltered.length;
+      visibleCount = Math.min(perPage, currentFiltered.length);
+      renderVisible();
+    }
+
+    loadMoreBtn.addEventListener('click', function () {
+      var perPage = settings.perPage > 0 ? settings.perPage : currentFiltered.length;
+      visibleCount = Math.min(visibleCount + perPage, currentFiltered.length);
+      renderVisible();
+    });
+
+    searchInput.addEventListener('input', applyFilter);
+    searchForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      applyFilter();
+    });
+
+    Promise.all([
+      fetch('/api/novels').then(function (r) { return r.json(); }),
+      fetch('/api/settings').then(function (r) { return r.json(); })
+    ]).then(function (results) {
+      novels = results[0];
+      settings = results[1];
+      if (settings.siteTitle) {
+        logoEl.textContent = settings.siteTitle;
+        document.title = settings.siteTitle + ' | 小説投稿サイト';
+      }
+      renderChips();
+      applyFilter();
+    }).catch(function () {
+      noResults.textContent = '作品の読み込みに失敗しました。サーバーが起動しているかご確認ください。';
+      noResults.classList.add('is-visible');
+    });
+  })();
+</script>
+<script src="js/reader-nav.js"></script>
 
 </body>
 </html>

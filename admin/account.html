@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#12181c">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex, nofollow">
+<title>アカウント設定 | 管理画面 | Saito</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <span class="logo">Saito</span>
+  <span class="admin-label">管理画面</span>
+</header>
+
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="write.html">小説投稿</a>
+    <a href="manage.html">投稿の管理</a>
+    <a href="home-settings.html">ホーム画面設定</a>
+    <a href="account.html" class="is-active">アカウント設定</a>
+    <a href="../index.html">サイトを見る</a>
+    <a href="login.html" class="logout" id="logout-link">ログアウト</a>
+  </nav>
+
+  <main class="admin-main">
+    <h1 class="admin-page-title">パスワードの変更</h1>
+    <p class="admin-hint-box">
+      管理者アカウントのパスワードを変更します。変更後は現在のログインセッションを保ったまま、
+      次回ログインから新しいパスワードが必要になります。
+    </p>
+
+    <form class="write-form" id="password-form">
+      <div class="form-group">
+        <label for="current-password">現在のパスワード</label>
+        <input type="password" id="current-password" autocomplete="current-password" required>
+      </div>
+
+      <div class="form-group">
+        <label for="new-password">新しいパスワード</label>
+        <input type="password" id="new-password" autocomplete="new-password" minlength="8" required>
+        <p class="form-hint">8文字以上で入力してください。</p>
+      </div>
+
+      <div class="form-group">
+        <label for="new-password-confirm">新しいパスワード（確認）</label>
+        <input type="password" id="new-password-confirm" autocomplete="new-password" minlength="8" required>
+      </div>
+
+      <p class="form-error" id="password-error" hidden></p>
+      <p class="form-success" id="password-success" hidden></p>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">パスワードを変更する</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script>
+  (function () {
+    fetch('/api/auth/session')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.loggedIn) window.location.href = 'login.html';
+      })
+      .catch(function () { window.location.href = 'login.html'; });
+
+    document.getElementById('logout-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      fetch('/api/auth/logout', { method: 'POST' }).finally(function () {
+        window.location.href = 'login.html';
+      });
+    });
+
+    var form = document.getElementById('password-form');
+    var errorEl = document.getElementById('password-error');
+    var successEl = document.getElementById('password-success');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.hidden = true;
+      successEl.hidden = true;
+
+      var newPassword = document.getElementById('new-password').value;
+      var confirmPassword = document.getElementById('new-password-confirm').value;
+
+      if (newPassword !== confirmPassword) {
+        errorEl.textContent = '新しいパスワードが一致しません。';
+        errorEl.hidden = false;
+        return;
+      }
+
+      fetch('/api/auth/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: document.getElementById('current-password').value,
+          newPassword: newPassword
+        })
+      })
+        .then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            errorEl.textContent = result.data.error || 'パスワードの変更に失敗しました。';
+            errorEl.hidden = false;
+            return;
+          }
+          successEl.textContent = 'パスワードを変更しました。次回ログインから新しいパスワードをご利用ください。';
+          successEl.hidden = false;
+          form.reset();
+        })
+        .catch(function () {
+          errorEl.textContent = 'サーバーに接続できませんでした。';
+          errorEl.hidden = false;
+        });
+    });
+  })();
+</script>
+
+</body>
+</html>

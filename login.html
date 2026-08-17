@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#12181c">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="Saito の会員ログインページです。">
+<title>ログイン | Saito</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">Saito</a>
+    <nav class="reader-nav" id="reader-nav"></nav>
+  </div>
+</header>
+
+<main class="container" style="max-width: 420px;">
+
+  <h1 class="section-title">ログイン</h1>
+
+  <form class="write-form" id="login-form">
+    <div class="form-group">
+      <label for="username">ユーザー名</label>
+      <input type="text" id="username" autocomplete="username" required>
+    </div>
+
+    <div class="form-group">
+      <label for="password">パスワード</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+    </div>
+
+    <p class="form-error" id="login-error" hidden></p>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">ログイン</button>
+    </div>
+  </form>
+
+  <p class="form-hint" style="margin-top: 1rem; text-align: center;">
+    会員登録がまだの方は <a href="signup.html" style="color: var(--color-primary);">会員登録</a>
+  </p>
+
+</main>
+
+<footer class="site-footer">
+  <p>&copy; 2026 Saito 小説投稿サイト</p>
+</footer>
+
+<script src="js/reader-nav.js"></script>
+<script>
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var next = params.get('next') || 'index.html';
+
+    var signupLink = document.querySelector('a[href="signup.html"]');
+    if (signupLink && next !== 'index.html') {
+      signupLink.href = 'signup.html?next=' + encodeURIComponent(next);
+    }
+
+    document.getElementById('login-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var errorEl = document.getElementById('login-error');
+      errorEl.hidden = true;
+
+      fetch('/api/reader/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value
+        })
+      })
+        .then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            errorEl.textContent = result.data.error || 'ログインに失敗しました。';
+            errorEl.hidden = false;
+            return;
+          }
+          window.location.href = next;
+        })
+        .catch(function () {
+          errorEl.textContent = 'サーバーに接続できませんでした。';
+          errorEl.hidden = false;
+        });
+    });
+  })();
+</script>
+
+</body>
+</html>

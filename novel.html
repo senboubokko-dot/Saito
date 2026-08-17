@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>サンプル小説タイトル その一 | Saito</title>
+<meta name="theme-color" content="#12181c">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" id="meta-description" content="小説投稿サイト Saito の作品詳細ページです。">
+<title>作品詳細 | Saito</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,62 +14,144 @@
 <header class="site-header">
   <div class="header-inner">
     <a href="index.html" class="logo">Saito</a>
-    <nav class="global-nav">
-      <a href="index.html">ホーム</a>
-      <a href="write.html">投稿する</a>
-      <a href="#">ログイン</a>
-    </nav>
+    <nav class="reader-nav" id="reader-nav"></nav>
   </div>
 </header>
 
-<main class="container">
-
-  <section class="novel-detail-header">
-    <h1 class="novel-detail-title">サンプル小説タイトル その一</h1>
-    <p class="novel-detail-author">著者: <a href="#">著者名A</a></p>
-    <div class="novel-meta">
-      <span class="tag">ファンタジー</span>
-      <span class="updated">更新: 2026/08/17</span>
-    </div>
-    <p class="novel-detail-summary">
-      ここに作品のあらすじが入ります。物語の導入や世界観、見どころなどを紹介する文章です。
-      読者が続きを読みたくなるような説明文をここに配置します。
-    </p>
-    <div class="novel-actions">
-      <button type="button" class="btn btn-primary">ブックマークする</button>
-      <button type="button" class="btn">シェアする</button>
-    </div>
-  </section>
-
-  <section class="episode-list-section">
-    <h2 class="section-title">目次</h2>
-    <ol class="episode-list">
-      <li class="episode-item">
-        <a href="#" class="episode-link">
-          <span class="episode-name">第1話　物語のはじまり</span>
-          <span class="episode-date">2026/08/01</span>
-        </a>
-      </li>
-      <li class="episode-item">
-        <a href="#" class="episode-link">
-          <span class="episode-name">第2話　出会い</span>
-          <span class="episode-date">2026/08/05</span>
-        </a>
-      </li>
-      <li class="episode-item">
-        <a href="#" class="episode-link">
-          <span class="episode-name">第3話　旅立ち</span>
-          <span class="episode-date">2026/08/17</span>
-        </a>
-      </li>
-    </ol>
-  </section>
-
+<main class="container" id="main-content">
+  <p class="no-results is-visible" id="loading-message">読み込み中です…</p>
 </main>
 
 <footer class="site-footer">
   <p>&copy; 2026 Saito 小説投稿サイト</p>
 </footer>
+
+<script>
+  (function () {
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function formatDate(iso) {
+      var d = new Date(iso);
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+    }
+
+    var mainEl = document.getElementById('main-content');
+    var params = new URLSearchParams(window.location.search);
+    var id = params.get('id');
+
+    function showError(message) {
+      mainEl.innerHTML = '<p class="no-results is-visible">' + escapeHtml(message) + '</p>';
+    }
+
+    if (!id) {
+      showError('作品が指定されていません。ホームから作品を選んでください。');
+      return;
+    }
+
+    fetch('/api/novels/' + encodeURIComponent(id))
+      .then(function (res) {
+        if (!res.ok) throw new Error('not found');
+        return res.json();
+      })
+      .then(function (novel) {
+        document.title = novel.title + ' | Saito';
+
+        var isOriginal = novel.worktype !== 'derivative';
+        var badgeClass = isOriginal ? 'badge badge-original' : 'badge';
+        var badgeText = isOriginal ? 'オリジナル' : '二次創作';
+        var tagsHtml = (novel.tags || []).map(function (t) {
+          return '<span class="tag">' + escapeHtml(t) + '</span>';
+        }).join('');
+
+        var episodesHtml = novel.chapters.map(function (ch) {
+          return (
+            '<li class="episode-item">' +
+              '<a href="episode.html?id=' + encodeURIComponent(novel.id) + '&n=' + ch.number + '" class="episode-link">' +
+                '<span class="episode-name">第' + ch.number + '話　' + escapeHtml(ch.title) + '</span>' +
+                '<span class="episode-date">' + formatDate(ch.createdAt) + '</span>' +
+              '</a>' +
+            '</li>'
+          );
+        }).join('');
+
+        mainEl.innerHTML =
+          '<section class="novel-detail-header">' +
+            '<div class="novel-card-top">' +
+              '<h1 class="novel-detail-title">' + escapeHtml(novel.title) + '</h1>' +
+              '<span class="' + badgeClass + '">' + badgeText + '</span>' +
+            '</div>' +
+            '<p class="novel-detail-author">著者: ' + escapeHtml(novel.author) + '</p>' +
+            '<div class="novel-meta"><span class="updated">更新: ' + formatDate(novel.updatedAt) + '</span></div>' +
+            '<div class="novel-tags">' + tagsHtml + '</div>' +
+            (novel.note ? '<p class="novel-detail-summary">' + escapeHtml(novel.note) + '</p>' : '') +
+            '<div class="novel-actions">' +
+              '<a href="episode.html?id=' + encodeURIComponent(novel.id) + '&n=1" class="btn btn-primary">最初から読む</a>' +
+              '<button type="button" class="btn btn-primary" id="bookmark-btn">ブックマークする</button>' +
+              '<button type="button" class="btn">シェアする</button>' +
+            '</div>' +
+          '</section>' +
+          '<section class="episode-list-section">' +
+            '<h2 class="section-title">目次</h2>' +
+            '<ol class="episode-list">' + episodesHtml + '</ol>' +
+          '</section>';
+
+        var descriptionEl = document.getElementById('meta-description');
+        if (descriptionEl) {
+          descriptionEl.setAttribute('content', novel.title + '（' + novel.author + '）の作品詳細ページです。' + (novel.note || ''));
+        }
+
+        setupBookmarkButton(novel);
+      })
+      .catch(function () {
+        showError('作品が見つかりませんでした。');
+      });
+
+    function setupBookmarkButton(novel) {
+      var btn = document.getElementById('bookmark-btn');
+      if (!btn) return;
+      var bookmarked = false;
+
+      function updateLabel() {
+        btn.textContent = bookmarked ? '★ ブックマーク済み' : 'ブックマークする';
+        btn.classList.toggle('btn-primary', !bookmarked);
+      }
+
+      fetch('/api/reader/session')
+        .then(function (res) { return res.json(); })
+        .then(function (session) {
+          if (!session.loggedIn) {
+            btn.addEventListener('click', function () {
+              window.location.href = 'login.html?next=' + encodeURIComponent(window.location.href);
+            });
+            return;
+          }
+
+          fetch('/api/bookmarks')
+            .then(function (res) { return res.json(); })
+            .then(function (list) {
+              bookmarked = list.some(function (n) { return n.id === novel.id; });
+              updateLabel();
+            });
+
+          btn.addEventListener('click', function () {
+            var method = bookmarked ? 'DELETE' : 'POST';
+            fetch('/api/bookmarks/' + encodeURIComponent(novel.id), { method: method })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                bookmarked = !!result.bookmarked;
+                updateLabel();
+              });
+          });
+        });
+    }
+  })();
+</script>
+<script src="js/reader-nav.js"></script>
 
 </body>
 </html>
