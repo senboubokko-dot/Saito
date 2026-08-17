@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>小説を投稿する | 管理画面 | Saito</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <span class="logo">Saito</span>
+  <span class="admin-label">管理画面</span>
+</header>
+
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="write.html" class="is-active">小説投稿</a>
+    <a href="home-settings.html">ホーム画面設定</a>
+    <a href="../index.html">サイトを見る</a>
+    <a href="login.html" class="logout">ログアウト</a>
+  </nav>
+
+  <main class="admin-main">
+    <h1 class="admin-page-title">小説を投稿する</h1>
+
+    <form class="write-form" onsubmit="return false;">
+      <div class="form-group">
+        <label for="title">タイトル</label>
+        <input type="text" id="title" name="title" placeholder="作品タイトルを入力">
+      </div>
+
+      <fieldset class="form-group">
+        <legend>作品タイプ</legend>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="worktype" value="original" checked>
+            オリジナル作品
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="worktype" value="derivative">
+            二次創作
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="form-group">
+        <label for="note">備考</label>
+        <textarea id="note" name="note" rows="4" placeholder="読者への一言や注意事項など、あらすじ以外の補足情報を入力"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="tag-input">タグ（最大10個）</label>
+        <div class="tag-input-row">
+          <input type="text" id="tag-input" placeholder="タグを入力してEnterまたは追加" maxlength="20">
+          <button type="button" class="btn" id="tag-add-btn">追加</button>
+        </div>
+        <ul class="tag-chip-list" id="tag-chip-list"></ul>
+        <p class="form-hint" id="tag-hint"></p>
+        <input type="hidden" name="tags" id="tags-hidden">
+      </div>
+
+      <div class="form-group">
+        <label for="body">本文</label>
+        <textarea id="body" name="body" rows="16" placeholder="本文を入力"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn">下書き保存</button>
+        <button type="submit" class="btn btn-primary">公開する</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script src="admin.js"></script>
+<script>
+  setupTagInput({
+    inputId: 'tag-input',
+    addButtonId: 'tag-add-btn',
+    listId: 'tag-chip-list',
+    hiddenId: 'tags-hidden',
+    hintId: 'tag-hint',
+    max: 10,
+    initial: ['ファンタジー', '異世界']
+  });
+</script>
+
+</body>
+</html>

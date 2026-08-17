@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ホーム画面設定 | 管理画面 | Saito</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="admin-topbar">
+  <span class="logo">Saito</span>
+  <span class="admin-label">管理画面</span>
+</header>
+
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="write.html">小説投稿</a>
+    <a href="home-settings.html" class="is-active">ホーム画面設定</a>
+    <a href="../index.html">サイトを見る</a>
+    <a href="login.html" class="logout">ログアウト</a>
+  </nav>
+
+  <main class="admin-main">
+    <h1 class="admin-page-title">ホーム画面設定</h1>
+    <p class="admin-hint-box">
+      トップページの表示内容を設定します。保存するとホーム画面（index.html）に反映されます。
+    </p>
+
+    <form class="write-form" onsubmit="return false;">
+      <div class="form-group">
+        <label for="site-title">サイトタイトル</label>
+        <input type="text" id="site-title" name="site-title" value="Saito">
+      </div>
+
+      <div class="form-group">
+        <label for="per-page">1ページに表示する作品数</label>
+        <input type="number" id="per-page" name="per-page" value="12" min="1" max="50">
+      </div>
+
+      <div class="form-group">
+        <label for="sort-order">初期の並び順</label>
+        <select id="sort-order" name="sort-order">
+          <option>更新が新しい順</option>
+          <option>公開日が新しい順</option>
+          <option>人気順</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="show-tag-search" checked>
+          ホーム画面にタグ検索を表示する
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="filter-tag-input">タグ絞り込みの候補（最大10個）</label>
+        <p class="form-hint">ここで追加したタグが、ホーム画面の「タグで絞り込む」に表示されます。</p>
+        <div class="tag-input-row">
+          <input type="text" id="filter-tag-input" placeholder="タグを入力してEnterまたは追加" maxlength="20">
+          <button type="button" class="btn" id="filter-tag-add-btn">追加</button>
+        </div>
+        <ul class="tag-chip-list" id="filter-tag-chip-list"></ul>
+        <p class="form-hint" id="filter-tag-hint"></p>
+        <input type="hidden" name="filter-tags" id="filter-tags-hidden">
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn">初期状態に戻す</button>
+        <button type="submit" class="btn btn-primary">保存する</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script src="admin.js"></script>
+<script>
+  setupTagInput({
+    inputId: 'filter-tag-input',
+    addButtonId: 'filter-tag-add-btn',
+    listId: 'filter-tag-chip-list',
+    hiddenId: 'filter-tags-hidden',
+    hintId: 'filter-tag-hint',
+    max: 10,
+    initial: ['ファンタジー', '恋愛', 'ミステリー', 'オリジナル', '二次創作']
+  });
+</script>
+
+</body>
+</html>

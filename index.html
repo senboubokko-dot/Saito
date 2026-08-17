@@ -11,11 +11,6 @@
 <header class="site-header">
   <div class="header-inner">
     <a href="index.html" class="logo">Saito</a>
-    <nav class="global-nav">
-      <a href="index.html">ホーム</a>
-      <a href="write.html">投稿する</a>
-      <a href="#">ログイン</a>
-    </nav>
   </div>
 </header>
 
@@ -23,9 +18,18 @@
 
   <section class="search-section">
     <form class="search-form" role="search">
-      <input type="search" placeholder="作品タイトル・作者名で検索" aria-label="作品を検索">
+      <input type="search" placeholder="作品タイトル・作者名・タグで検索" aria-label="作品を検索">
       <button type="submit">検索</button>
     </form>
+
+    <div class="tag-filter">
+      <span class="tag-filter-label">タグで絞り込む:</span>
+      <button type="button" class="chip" data-tag="fantasy">ファンタジー</button>
+      <button type="button" class="chip" data-tag="romance">恋愛</button>
+      <button type="button" class="chip" data-tag="mystery">ミステリー</button>
+      <button type="button" class="chip" data-tag="original">オリジナル</button>
+      <button type="button" class="chip" data-tag="derivative">二次創作</button>
+    </div>
   </section>
 
   <section class="novel-list-section">
@@ -34,13 +38,19 @@
     <ul class="novel-list">
       <li class="novel-card">
         <a href="novel.html" class="novel-card-link">
-          <h2 class="novel-title">サンプル小説タイトル その一</h2>
+          <div class="novel-card-top">
+            <h2 class="novel-title">サンプル小説タイトル その一</h2>
+            <span class="badge badge-original">オリジナル</span>
+          </div>
           <p class="novel-author">著者名A</p>
           <p class="novel-summary">
             ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
           </p>
-          <div class="novel-meta">
+          <div class="novel-tags">
             <span class="tag">ファンタジー</span>
+            <span class="tag">異世界</span>
+          </div>
+          <div class="novel-meta">
             <span class="updated">更新: 2026/08/17</span>
           </div>
         </a>
@@ -48,13 +58,19 @@
 
       <li class="novel-card">
         <a href="novel.html" class="novel-card-link">
-          <h2 class="novel-title">サンプル小説タイトル その二</h2>
+          <div class="novel-card-top">
+            <h2 class="novel-title">サンプル小説タイトル その二</h2>
+            <span class="badge badge-original">オリジナル</span>
+          </div>
           <p class="novel-author">著者名B</p>
           <p class="novel-summary">
             ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
           </p>
-          <div class="novel-meta">
+          <div class="novel-tags">
             <span class="tag">恋愛</span>
+            <span class="tag">学園</span>
+          </div>
+          <div class="novel-meta">
             <span class="updated">更新: 2026/08/16</span>
           </div>
         </a>
@@ -62,13 +78,19 @@
 
       <li class="novel-card">
         <a href="novel.html" class="novel-card-link">
-          <h2 class="novel-title">サンプル小説タイトル その三</h2>
+          <div class="novel-card-top">
+            <h2 class="novel-title">サンプル小説タイトル その三</h2>
+            <span class="badge">二次創作</span>
+          </div>
           <p class="novel-author">著者名C</p>
           <p class="novel-summary">
             ここに作品のあらすじが入ります。物語の導入や見どころを簡潔に紹介するテキストです。
           </p>
-          <div class="novel-meta">
+          <div class="novel-tags">
             <span class="tag">ミステリー</span>
+            <span class="tag">短編</span>
+          </div>
+          <div class="novel-meta">
             <span class="updated">更新: 2026/08/15</span>
           </div>
         </a>
@@ -81,6 +103,14 @@
 <footer class="site-footer">
   <p>&copy; 2026 Saito 小説投稿サイト</p>
 </footer>
+
+<script>
+  document.querySelectorAll('.tag-filter .chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      chip.classList.toggle('is-active');
+    });
+  });
+</script>
 
 </body>
 </html>
