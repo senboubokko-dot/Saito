@@ -1,6 +1,8 @@
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const { ensureSeedData } = require('./lib/seed');
 const authRoutes = require('./routes/auth');
@@ -16,6 +18,11 @@ const PORT = process.env.PORT || 3000;
 const PROJECT_ROOT = path.join(__dirname, '..');
 
 app.disable('x-powered-by');
+
+// 各HTMLページがscriptタグを直接埋め込んでいるため、CSPは無効化し、
+// それ以外の基本的なセキュリティヘッダー（X-Frame-Options等）のみ有効にする
+app.use(helmet({ contentSecurityPolicy: false }));
+
 app.use(express.json());
 
 app.use(
@@ -30,6 +37,19 @@ app.use(
     }
   })
 );
+
+// ログイン・会員登録は総当たり攻撃対策として回数制限をかける
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '試行回数が多すぎます。しばらくしてから再度お試しください。' }
+});
+
+app.use('/api/auth/login', authLimiter);
+app.use('/api/reader/login', authLimiter);
+app.use('/api/reader/signup', authLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/novels', novelRoutes);

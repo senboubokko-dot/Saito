@@ -286,6 +286,12 @@ button {
   color: var(--color-text-light);
 }
 
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
 /* 作品タイプ（オリジナル / 二次創作）バッジ */
 
 .badge {

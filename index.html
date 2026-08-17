@@ -35,6 +35,10 @@
     <ul class="novel-list" id="novel-list"></ul>
 
     <p class="no-results" id="no-results">読み込み中です…</p>
+
+    <div class="load-more-wrap">
+      <button type="button" class="btn" id="load-more-btn" hidden>もっと見る</button>
+    </div>
   </section>
 
 </main>
@@ -50,10 +54,13 @@
     var tagFilterEl = document.getElementById('tag-filter');
     var novelListEl = document.getElementById('novel-list');
     var noResults = document.getElementById('no-results');
+    var loadMoreBtn = document.getElementById('load-more-btn');
     var logoEl = document.querySelector('.logo');
 
     var novels = [];
     var settings = {};
+    var currentFiltered = [];
+    var visibleCount = 0;
 
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, function (c) {
@@ -143,20 +150,32 @@
       return list;
     }
 
+    function renderVisible() {
+      renderNovels(currentFiltered.slice(0, visibleCount));
+      loadMoreBtn.hidden = visibleCount >= currentFiltered.length;
+    }
+
     function applyFilter() {
       var query = searchInput.value.trim().toLowerCase();
       var activeTags = activeChipTags();
 
-      var filtered = sortedNovels().filter(function (novel) {
+      currentFiltered = sortedNovels().filter(function (novel) {
         var haystack = (novel.title + ' ' + novel.author + ' ' + (novel.tags || []).join(' ')).toLowerCase();
         var matchesQuery = !query || haystack.indexOf(query) !== -1;
         var matchesTags = activeTags.every(function (t) { return (novel.tags || []).indexOf(t) !== -1; });
         return matchesQuery && matchesTags;
       });
 
-      var perPage = settings.perPage > 0 ? settings.perPage : filtered.length;
-      renderNovels(filtered.slice(0, perPage));
+      var perPage = settings.perPage > 0 ? settings.perPage : currentFiltered.length;
+      visibleCount = Math.min(perPage, currentFiltered.length);
+      renderVisible();
     }
+
+    loadMoreBtn.addEventListener('click', function () {
+      var perPage = settings.perPage > 0 ? settings.perPage : currentFiltered.length;
+      visibleCount = Math.min(visibleCount + perPage, currentFiltered.length);
+      renderVisible();
+    });
 
     searchInput.addEventListener('input', applyFilter);
     searchForm.addEventListener('submit', function (e) {
