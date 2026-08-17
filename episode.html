@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>話を読む | Saito</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">Saito</a>
+  </div>
+</header>
+
+<main class="container">
+
+  <p class="breadcrumb">
+    <a href="novel.html">サンプル小説タイトル その一</a> ＞ <span id="breadcrumb-episode">第1話</span>
+  </p>
+
+  <div class="reading-tools">
+    <a href="novel.html" class="toc-link">目次に戻る</a>
+    <div class="font-size-controls" role="group" aria-label="文字サイズ">
+      <span>文字サイズ:</span>
+      <button type="button" data-size="small">小</button>
+      <button type="button" data-size="medium" class="is-active">中</button>
+      <button type="button" data-size="large">大</button>
+    </div>
+  </div>
+
+  <h1 class="episode-title" id="episode-title">第1話　物語のはじまり</h1>
+
+  <article class="reading-body" id="reading-body">
+    <p>
+      朝の光が窓辺に差し込むころ、少女はいつもより早く目を覚ました。
+      今日という日が、これまでとは違う一日になることを、まだ知らないままに。
+    </p>
+    <p>
+      ここに本文が入ります。実際の投稿では、管理画面の「本文」欄に入力した内容が
+      このエリアに表示される想定です。段落ごとに読みやすい行間と余白を確保し、
+      スマートフォンでも快適に読み進められるようにしています。
+    </p>
+    <p>
+      文字サイズは上部のボタンから「小・中・大」に切り替えられます。
+      長時間の読書でも目が疲れにくいよう、背景と文字のコントラストは
+      控えめな水色と黒の2トーンにまとめました。
+    </p>
+    <p>
+      この続きは、次の話へのボタンから読み進めることができます。
+      目次に戻って別の話を選ぶことも可能です。
+    </p>
+  </article>
+
+  <nav class="reading-nav" aria-label="話の移動">
+    <a href="#" id="prev-link" class="btn">← 前の話</a>
+    <a href="novel.html" class="toc-link">目次</a>
+    <a href="#" id="next-link" class="btn btn-primary">次の話 →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <p>&copy; 2026 Saito 小説投稿サイト</p>
+</footer>
+
+<script>
+  (function () {
+    var episodes = [
+      { title: '物語のはじまり', date: '2026/08/01' },
+      { title: '出会い', date: '2026/08/05' },
+      { title: '旅立ち', date: '2026/08/17' }
+    ];
+
+    var params = new URLSearchParams(window.location.search);
+    var epNumber = parseInt(params.get('ep'), 10);
+    if (!epNumber || epNumber < 1 || epNumber > episodes.length) {
+      epNumber = 1;
+    }
+    var episode = episodes[epNumber - 1];
+    var heading = '第' + epNumber + '話　' + episode.title;
+
+    document.title = heading + ' | サンプル小説タイトル その一 | Saito';
+    document.getElementById('episode-title').textContent = heading;
+    document.getElementById('breadcrumb-episode').textContent = '第' + epNumber + '話';
+
+    var prevLink = document.getElementById('prev-link');
+    var nextLink = document.getElementById('next-link');
+
+    if (epNumber > 1) {
+      prevLink.href = 'episode.html?ep=' + (epNumber - 1);
+      prevLink.removeAttribute('aria-disabled');
+    } else {
+      prevLink.removeAttribute('href');
+      prevLink.setAttribute('aria-disabled', 'true');
+    }
+
+    if (epNumber < episodes.length) {
+      nextLink.href = 'episode.html?ep=' + (epNumber + 1);
+      nextLink.removeAttribute('aria-disabled');
+    } else {
+      nextLink.textContent = '目次に戻る';
+      nextLink.href = 'novel.html';
+    }
+
+    var sizeButtons = document.querySelectorAll('.font-size-controls button');
+    var readingBody = document.getElementById('reading-body');
+    var sizeClass = { small: 'font-small', medium: '', large: 'font-large' };
+
+    sizeButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        sizeButtons.forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        readingBody.className = 'reading-body ' + sizeClass[btn.dataset.size];
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>
