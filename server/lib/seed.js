@@ -125,10 +125,15 @@ function ensureSeedData() {
     writeJSON('novels.json', demoNovels());
   }
 
+  if (!exists('readers.json')) {
+    writeJSON('readers.json', []);
+  }
+
   // readJSON呼び出しはファイルが無い場合の自己修復も兼ねる
   readJSON('admin.json', null);
   readJSON('settings.json', DEFAULT_SETTINGS);
   readJSON('novels.json', []);
+  readJSON('readers.json', []);
 }
 
 module.exports = { ensureSeedData, DEFAULT_SETTINGS };

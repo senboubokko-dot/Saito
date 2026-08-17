@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#12181c">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Saito のマイページです。ブックマークした作品を確認できます。">
+<title>マイページ | Saito</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">Saito</a>
+    <nav class="reader-nav" id="reader-nav"></nav>
+  </div>
+</header>
+
+<main class="container">
+
+  <h1 class="section-title">ブックマークした作品</h1>
+
+  <ul class="novel-list" id="bookmark-list"></ul>
+
+  <p class="no-results" id="no-results">読み込み中です…</p>
+
+</main>
+
+<footer class="site-footer">
+  <p>&copy; 2026 Saito 小説投稿サイト</p>
+</footer>
+
+<script src="js/reader-nav.js"></script>
+<script>
+  (function () {
+    var listEl = document.getElementById('bookmark-list');
+    var noResults = document.getElementById('no-results');
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function formatDate(iso) {
+      var d = new Date(iso);
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+    }
+
+    function novelCardHtml(novel) {
+      var isOriginal = novel.worktype !== 'derivative';
+      var badgeClass = isOriginal ? 'badge badge-original' : 'badge';
+      var badgeText = isOriginal ? 'オリジナル' : '二次創作';
+      var tagsHtml = (novel.tags || []).map(function (t) {
+        return '<span class="tag">' + escapeHtml(t) + '</span>';
+      }).join('');
+
+      return (
+        '<a href="novel.html?id=' + encodeURIComponent(novel.id) + '" class="novel-card-link">' +
+          '<div class="novel-card-top">' +
+            '<h2 class="novel-title">' + escapeHtml(novel.title) + '</h2>' +
+            '<span class="' + badgeClass + '">' + badgeText + '</span>' +
+          '</div>' +
+          '<p class="novel-author">' + escapeHtml(novel.author) + '</p>' +
+          '<p class="novel-summary">' + escapeHtml(novel.note || '') + '</p>' +
+          '<div class="novel-tags">' + tagsHtml + '</div>' +
+          '<div class="novel-meta"><span class="updated">更新: ' + formatDate(novel.updatedAt) + '</span></div>' +
+        '</a>'
+      );
+    }
+
+    fetch('/api/reader/session')
+      .then(function (res) { return res.json(); })
+      .then(function (session) {
+        if (!session.loggedIn) {
+          window.location.href = 'login.html?next=' + encodeURIComponent('mypage.html');
+          return;
+        }
+
+        fetch('/api/bookmarks')
+          .then(function (res) { return res.json(); })
+          .then(function (novels) {
+            if (!novels.length) {
+              noResults.textContent = 'まだブックマークした作品がありません。気になる作品のページから「ブックマークする」を押してみてください。';
+              noResults.classList.add('is-visible');
+              return;
+            }
+            novels.forEach(function (novel) {
+              var li = document.createElement('li');
+              li.className = 'novel-card';
+              li.innerHTML = novelCardHtml(novel);
+              listEl.appendChild(li);
+            });
+          });
+      })
+      .catch(function () {
+        window.location.href = 'login.html';
+      });
+  })();
+</script>
+
+</body>
+</html>

@@ -92,6 +92,35 @@ button {
   letter-spacing: 0.08em;
 }
 
+.reader-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+}
+
+.reader-nav a,
+.reader-nav button {
+  color: var(--color-header-text);
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.reader-nav a:hover,
+.reader-nav button:hover {
+  color: var(--color-mizu);
+}
+
+.reader-nav-name {
+  color: var(--color-mizu);
+}
+
 /* ---------- フッター ---------- */
 
 .site-footer {

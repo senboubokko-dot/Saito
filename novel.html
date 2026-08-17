@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#12181c">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" id="meta-description" content="小説投稿サイト Saito の作品詳細ページです。">
 <title>作品詳細 | Saito</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -11,6 +14,7 @@
 <header class="site-header">
   <div class="header-inner">
     <a href="index.html" class="logo">Saito</a>
+    <nav class="reader-nav" id="reader-nav"></nav>
   </div>
 </header>
 
@@ -87,7 +91,7 @@
             (novel.note ? '<p class="novel-detail-summary">' + escapeHtml(novel.note) + '</p>' : '') +
             '<div class="novel-actions">' +
               '<a href="episode.html?id=' + encodeURIComponent(novel.id) + '&n=1" class="btn btn-primary">最初から読む</a>' +
-              '<button type="button" class="btn">ブックマークする</button>' +
+              '<button type="button" class="btn btn-primary" id="bookmark-btn">ブックマークする</button>' +
               '<button type="button" class="btn">シェアする</button>' +
             '</div>' +
           '</section>' +
@@ -95,12 +99,59 @@
             '<h2 class="section-title">目次</h2>' +
             '<ol class="episode-list">' + episodesHtml + '</ol>' +
           '</section>';
+
+        var descriptionEl = document.getElementById('meta-description');
+        if (descriptionEl) {
+          descriptionEl.setAttribute('content', novel.title + '（' + novel.author + '）の作品詳細ページです。' + (novel.note || ''));
+        }
+
+        setupBookmarkButton(novel);
       })
       .catch(function () {
         showError('作品が見つかりませんでした。');
       });
+
+    function setupBookmarkButton(novel) {
+      var btn = document.getElementById('bookmark-btn');
+      if (!btn) return;
+      var bookmarked = false;
+
+      function updateLabel() {
+        btn.textContent = bookmarked ? '★ ブックマーク済み' : 'ブックマークする';
+        btn.classList.toggle('btn-primary', !bookmarked);
+      }
+
+      fetch('/api/reader/session')
+        .then(function (res) { return res.json(); })
+        .then(function (session) {
+          if (!session.loggedIn) {
+            btn.addEventListener('click', function () {
+              window.location.href = 'login.html?next=' + encodeURIComponent(window.location.href);
+            });
+            return;
+          }
+
+          fetch('/api/bookmarks')
+            .then(function (res) { return res.json(); })
+            .then(function (list) {
+              bookmarked = list.some(function (n) { return n.id === novel.id; });
+              updateLabel();
+            });
+
+          btn.addEventListener('click', function () {
+            var method = bookmarked ? 'DELETE' : 'POST';
+            fetch('/api/bookmarks/' + encodeURIComponent(novel.id), { method: method })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                bookmarked = !!result.bookmarked;
+                updateLabel();
+              });
+          });
+        });
+    }
   })();
 </script>
+<script src="js/reader-nav.js"></script>
 
 </body>
 </html>
