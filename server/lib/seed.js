@@ -113,7 +113,7 @@ function ensureSeedData() {
     console.log(
       '[seed] 管理者アカウントを作成しました → ID: ' + DEFAULT_ADMIN.username +
       ' / パスワード: ' + DEFAULT_ADMIN.password +
-      '（必ずログイン後に変更してください。現状パスワード変更画面は未実装のため、data/admin.json を直接更新してください）'
+      '（必ずログイン後、管理画面の「アカウント設定」からパスワードを変更してください）'
     );
   }
 

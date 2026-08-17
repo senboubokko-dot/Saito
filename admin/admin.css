@@ -147,6 +147,65 @@ body.admin-body {
   margin-bottom: 1.2rem;
 }
 
+/* ---------- 投稿の管理（編集・削除） ---------- */
+
+.manage-novel-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.manage-novel-summary,
+.manage-chapter-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.manage-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.manage-actions .btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+}
+
+.manage-edit-panel {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.manage-edit-panel[hidden] {
+  display: none;
+}
+
+.manage-chapter-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.manage-chapter-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+}
+
 /* ---------- レスポンシブ ---------- */
 
 @media (min-width: 800px) {
